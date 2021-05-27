@@ -1,26 +1,31 @@
 # Assignment - API Enhancement
 
-## Description
-
-Please see the target section down below and try to achieve the items as many as you can.
-
 ## Target
+1. Import csv file into sqlite3 ```import_data.py```
 
-1. Import csv file into database, your table __MUST__ have the following columns down below. You can choose any Database service you want. e.g. __Amazon RDS__, __Azure SQL Databae__ or __local SQLite__.
+```sql
+.schema bills
+CREATE TABLE "bills" (
+  "bill/PayerAccountId" INTEGER,
+  "lineItem/UsageAccountId" INTEGER,
+  "lineItem/UsageStartDate" TEXT,
+  "lineItem/UsageEndDate" TEXT,
+  "lineItem/UsageAmount" REAL,
+  "lineItem/UnblendedRate" REAL,
+  "lineItem/UnblendedCost" REAL,
+  "product/ProductName" TEXT
+);
+CREATE INDEX idx_aid ON bills ([lineItem/UsageAccountId]);
+CREATE INDEX idx_prodName ON bills ([product/ProductName]);
+```
 
-      | Column | Description |
-      | -- | -- |
-      | bill/PayerAccountId | The account ID of the paying account. For an organization in AWS Organizations, this is the account ID of the master account. |
-      |lineItem/UnblendedCost | The UnblendedCost is the UnblendedRate multiplied by the UsageAmount. |
-      | lineItem/UnblendedRate | The uncombined rate for specific usage. For line items that have an RI discount applied to them, the UnblendedRate is zero. Line items with an RI discount have a UsageType of Discounted Usage. |
-      | lineItem/UsageAccountId |The ID of the account that used this line item. For organizations, this can be either the master account or a member account. You can use this field to track costs or usage by account. |
-      | lineItem/UsageAmount | The amount of usage that you incurred during the specified time period. For size-flexible reserved instances, use the reservation/TotalReservedUnits column instead. |
-      | lineItem/UsageStartDate |  The start date and time for the line item in UTC, inclusive. The format is YYYY-MM-DDTHH:mm:ssZ. |
-      | lineItem/UsageEndDate | The end date and time for the corresponding line item in UTC, exclusive. The format is YYYY-MM-DDTHH:mm:ssZ. |
-      | product/ProductName | The full name of the AWS service. Use this column to filter AWS usage by AWS service. Sample values: AWS Backup, AWS Config, Amazon Registrar, Amazon Elastic File System, Amazon Elastic Compute Cloud |
-      
-2. Create DB index to enhance query performance.
-3. Make APIs to achieve the following requirements
+2. create DB index at lineItem/UsageAccountId, product/ProductName ```index_data.py```
+3. APIs
+    ```sh
+    cd api;
+    pip install -r requirements.txt
+    python app.py
+    ```
     1. Get __lineItem/UnblendedCost__ grouping by __product/productname__
         - Input
           | Column | Required |
@@ -34,7 +39,11 @@ Please see the target section down below and try to achieve the items as many as
                 ...
             }
         ```
-    1. Get daily __lineItem/UsageAmount__ grouping by __product/productname__
+        1. __API URLs__ /api/aid/`<aid>`/unblended_cost
+        2. __API sample__   curl http://localhost:5000/api/aid/27404931260/unblended_cost
+
+
+    2. Get daily __lineItem/UsageAmount__ grouping by __product/productname__
         - Input
           | Column | Required |
           | ------ | -------- |
@@ -56,20 +65,18 @@ Please see the target section down below and try to achieve the items as many as
                 },
             }
         ```
-4. Your can only use __Python__ or __C#__ to implement APIs.
-5. *(Optional)* You __can add more input arguments__ to your APIs to achieve paginaton strategy.
-6. *(Optional)* Use your algorithm to reduce response time when calling the APIs.
+        1. __API URLs__ /api/aid/`<aid>`/usage_amount
+        2. __API sample__   curl -X GET http://localhost:5000/api/aid/27404931260/usage_amount
+
+4. I use python implement APIs.
 
 ## Deliverable
-
-1. Upload codes to your __GitHub__ and __provide repo URL__.
-2. Include a __README.md__ file in __the root of repo__.
-3. Provide your __API spec__, __API URLs__, and __DB schema__ to __README.md__.
-4. Use any kind of framework, e.g. ASP.NET 5, Django, Flask.
-5. *(Optional)* If you are using __AWS__ / __Azure__ / __GCP__, describe what services you are using. 
-6. *(Optional)* Describe how you reduce the response time / improve performance to __README.md__.
-
-## Notice
-
-* Once you finished the assignment, send an email back to the one who contacted you.
-* Leave comments to __README.md__ if there is any.
+1. git repo [https://github.com/liyuqi/hw-backend-api-enhancement]
+2. __README.md__ here
+3. API description as above
+4. Flask framwork
+5. local sqlite
+6. performance
+    1. create index: every query filter UsageAccountId, then group by ProductName
+    2. unblendedcost: first use sum() function at query, then render out
+    3. UsageAmount: first filter at query, map daily amount from start to end, then render out
